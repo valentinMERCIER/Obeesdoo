@@ -19,7 +19,7 @@
 
     'depends': [
         'website',
-        'website_portal_v10',
+        'website_portal_extend',
     ],
 
     'data': [
