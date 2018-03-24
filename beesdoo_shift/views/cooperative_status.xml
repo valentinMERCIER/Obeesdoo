@@ -80,6 +80,7 @@
                         <field name="can_shop" />
                     </group>
                     <group>
+                        <field name="future_alert_date" readonly="1" />
                         <field name="time_extension" />
                         <field name="holiday_start_time" />
                         <field name="holiday_end_time" />

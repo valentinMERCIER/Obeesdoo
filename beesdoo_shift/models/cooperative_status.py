@@ -7,6 +7,7 @@ import logging
 from openerp.osv.fields import related
 
 _logger = logging.getLogger(__name__)
+PERIOD = 28  # TODO: use system parameter
 
 def add_days_delta(date_from, days_delta):
     if not date_from:
@@ -73,6 +74,7 @@ class CooperativeStatus(models.Model):
     irregular_start_date = fields.Date()  #TODO migration script
     irregular_absence_date = fields.Date()
     irregular_absence_counter = fields.Integer() #TODO unsubscribe when reach -2
+    future_alert_date = fields.Date(compute='_compute_future_alert_date')
 
 
     @api.depends('today', 'sr', 'sc', 'holiday_end_time',
@@ -81,7 +83,7 @@ class CooperativeStatus(models.Model):
                  'unsubscribed', 'irregular_absence_date',
                  'irregular_absence_counter')
     def _compute_status(self):
-        alert_delay = int(self.env['ir.config_parameter'].get_param('alert_delay', 28))
+        alert_delay = int(self.env['ir.config_parameter'].get_param('alert_delay', PERIOD))
         grace_delay = int(self.env['ir.config_parameter'].get_param('default_grace_delay', 10))
         update = int(self.env['ir.config_parameter'].get_param('always_update', False))
         for rec in self:
@@ -97,6 +99,18 @@ class CooperativeStatus(models.Model):
             elif rec.working_mode == 'exempt':
                 rec.status = 'ok'
                 rec.can_shop = True
+
+    @api.depends('today', 'irregular_start_date', 'sr')
+    def _compute_future_alert_date(self):
+        """Compute date before which the worker is up to date"""
+        for rec in self:
+            future_alert_date = False
+            if not rec.alert_start_time and rec.irregular_start_date:
+                today_date = fields.Date.from_string(rec.today)
+                delta = (today_date - fields.Date.from_string(rec.irregular_start_date)).days
+                future_alert_date = today_date + timedelta(days=(rec.sr + 1) * PERIOD - delta % PERIOD)
+                future_alert_date = future_alert_date.strftime('%Y-%m-%d')
+            rec.future_alert_date = future_alert_date
 
     def _set_regular_status(self, grace_delay, alert_delay):
         self.ensure_one()
@@ -247,7 +261,7 @@ class CooperativeStatus(models.Model):
         today_date = fields.Date.from_string(today)
         for status in irregular:
             delta = (today_date - fields.Date.from_string(status.irregular_start_date)).days
-            if delta and delta % 28 == 0 and status not in journal.line_ids: #TODO use system parameter for 28
+            if delta and delta % PERIOD == 0 and status not in journal.line_ids:
                 if status.sr > 0:
                     status.sr -= 1
                 else:
