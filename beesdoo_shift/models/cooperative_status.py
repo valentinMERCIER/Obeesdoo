@@ -139,7 +139,7 @@ class CooperativeStatus(models.Model):
         #Check for holidays; Can be in holidays even in alert or other mode ?
         elif self.today >= self.holiday_start_time and self.today <= self.holiday_end_time:
             self.status = 'holiday'
-            self.can_shop = True
+            self.can_shop = False
         elif ok or (not self.alert_start_time and self.sr >= 0):
             self.status = 'ok'
             self.can_shop = True
@@ -172,7 +172,7 @@ class CooperativeStatus(models.Model):
         #Check for holidays; Can be in holidays even in alert or other mode ?
         elif self.today >= self.holiday_start_time and self.today <= self.holiday_end_time:
             self.status = 'holiday'
-            self.can_shop = True
+            self.can_shop = False
         elif ok or (not self.alert_start_time and self.sr >= 0):
             self.status = 'ok'
             self.can_shop = True
@@ -305,6 +305,16 @@ class ResPartner(models.Model):
     state = fields.Selection(related='cooperative_status_ids.status', readonly=True, store=True)
     extension_start_time = fields.Date(related='cooperative_status_ids.extension_start_time', string="Extension Start Day", readonly=True, store=True)
     subscribed_shift_ids = fields.Many2many('beesdoo.shift.template')
+    can_shop = fields.Boolean(compute="_get_can_shop")
+
+    @api.multi
+    def _get_can_shop(self):
+        for rec in self:
+            can_shop = False
+            if rec.cooperator_type in ('share_a', 'share_b'):
+                if rec.cooperative_status_ids:
+                    can_shop = rec.cooperative_status_ids[0].can_shop
+            rec.can_shop = can_shop
 
     @api.multi
     def coop_subscribe(self):

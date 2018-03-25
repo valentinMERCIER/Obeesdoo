@@ -1,0 +1,43 @@
+<odoo>
+    <record model="ir.actions.act_window" id="action_welcome">
+        <field name="name">Shift Type</field>
+        <field name="res_model">beesdoo.shift.welcome</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+    </record>
+
+    <menuitem name="Shift Welcome" id="menu_root" action="action_welcome"
+        groups="beesdoo_shift.group_shift_attendance" />
+
+    <record model="ir.ui.view" id="shift_welcome_screen_view_form">
+        <field name="name">Shift Welcome Screen</field>
+        <field name="model">beesdoo.shift.welcome</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <field name="_barcode_scanned" widget="barcode_handler" />
+                    <separator string="Cooperator" />
+                    <h1>
+                        <field name="partner_id" />
+                    </h1>
+                <group>
+                    <field name="can_shop" />
+                </group>
+                <field name="message" readonly="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <template id="welcome_message" name="Welcome Message">
+    <img t-attf-src="data:image/*;base64,{{rec.partner_id.image}}"  />
+
+        <t t-if="rec.can_shop">
+            <h1><font style="background-color: rgb(0, 255, 0); font-size: 24px;">Can shop</font></h1>
+        </t>
+        <t t-if="not rec.can_shop">
+            <h1><font style="background-color: rgb(255, 0, 0); font-size: 24px;">Cannot shop</font></h1>
+        </t>
+    </template>
+
+</odoo>
